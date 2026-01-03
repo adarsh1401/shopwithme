@@ -1,0 +1,45 @@
+server:
+  port: 9000
+
+spring:
+  main:
+    web-application-type: reactive
+
+  cloud:
+    gateway:
+      routes:
+
+        # ---------- AUTH SERVICE (PUBLIC) ----------
+        - id: auth-service
+          uri: http://auth-service:9001
+          predicates:
+            - Path=/auth/**
+
+        # ---------- PRODUCT SERVICE ----------
+        - id: product-service
+          uri: http://product-service:8083
+          predicates:
+            - Path=/api/product/**
+          filters:
+            - JwtAuthentication
+
+        # ---------- ORDER SERVICE ----------
+        - id: order-service
+          uri: http://order-service:8081
+          predicates:
+            - Path=/api/order/**
+          filters:
+            - JwtAuthentication
+
+        # ---------- INVENTORY SERVICE ----------
+        - id: inventory-service
+          uri: http://inventory-service:8082
+          predicates:
+            - Path=/api/inventory/**
+          filters:
+            - JwtAuthentication
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.client: DEBUG

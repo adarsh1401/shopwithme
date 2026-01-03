@@ -1,0 +1,26 @@
+# Eclipse workspace (VERY IMPORTANT)
+.metadata/
+
+# Eclipse project files
+.project
+.classpath
+.settings/
+
+# Maven
+**/target/
+
+# Logs
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Docker volumes / DB data (VERY IMPORTANT)
+dev-env/data/
+dev-env/mysql/
+dev-env/mysql-auth/
+dev-env/mysql-order/
+
+# Unix socket files
+*.sock

@@ -1,0 +1,97 @@
+services:
+  # -------------------- MONGODB --------------------
+  mongodb:
+    image: mongo:4.4
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: product-service
+    volumes:
+      - ./data:/data/db
+
+  # -------------------- PRODUCT SERVICE --------------------
+  product-service:
+    build: ../product-service
+    container_name: product-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - mongodb
+
+  # -------------------- MYSQL FOR ORDER SERVICE --------------------
+  mysql-order:
+    image: mysql:8.3.0
+    container_name: mysql-order
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./mysql-order:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # -------------------- ORDER SERVICE --------------------
+  order-service:
+    build: ../order-service
+    container_name: order-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mysql-order
+
+  # -------------------- MYSQL FOR INVENTORY --------------------
+  mysql:
+    image: mysql:8.3.0
+    container_name: mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: roots
+    volumes:
+      - ./mysql:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # -------------------- INVENTORY SERVICE --------------------
+  inventory-service:
+    build: ../inventory-service
+    container_name: inventory-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - mysql
+
+  # -------------------- MYSQL FOR AUTH SERVICE --------------------
+  mysql-auth:
+    image: mysql:8.3.0
+    container_name: mysql-auth
+    ports:
+      - "3309:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: auth_service
+    volumes:
+      - ./mysql-auth:/var/lib/mysql
+
+  # -------------------- AUTH SERVICE --------------------
+  auth-service:
+    build: ../auth-service
+    container_name: auth-service
+    ports:
+      - "9001:9001"
+    depends_on:
+      - mysql-auth
+
+  # -------------------- API GATEWAY --------------------
+  api-gateway:
+    build: ../api-gateway
+    container_name: api-gateway
+    ports:
+      - "9000:9000"
+    depends_on:
+      - product-service
+      - order-service
+      - inventory-service
+      - auth-service
