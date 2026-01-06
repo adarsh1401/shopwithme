@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_NAME = "order-service"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                bat '''
+		        cd order-service
+		        mvn clean package -DskipTests
+		        '''
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                bat '''
+                docker build -t order-service:latest order-service
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                bat '''
+                cd dev-env
+        		docker-compose up -d order-service
+                '''
+            }
+        }
+    }
+}
