@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_NAME = "inventory-service"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                bat '''
+		        cd inventory-service
+		        mvn clean package -DskipTests
+		        '''
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                bat '''
+                docker build -t inventory-service:latest inventory-service
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                bat '''
+                cd dev-env
+        		docker-compose up -d inventory-service
+                '''
+            }
+        }
+    }
+}
