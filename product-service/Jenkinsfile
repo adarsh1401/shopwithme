@@ -15,14 +15,17 @@ pipeline {
 
         stage('Build') {
             steps {
-                bat 'mvn clean package -DskipTests'
+                bat '''
+		        cd product-service
+		        mvn clean package -DskipTests
+		        '''
             }
         }
 
         stage('Docker Build') {
             steps {
                 bat '''
-                docker build -t product-service:latest .
+                docker build -t product-service:latest product-service
                 '''
             }
         }
