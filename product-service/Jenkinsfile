@@ -30,11 +30,11 @@ pipeline {
             }
         }
 
-        stage('Deploy (optional)') {
+        stage('Deploy') {
             steps {
                 bat '''
-                cd ../dev-env
-                docker-compose up -d product-service
+                cd dev-env
+        		docker-compose up -d product-service
                 '''
             }
         }
