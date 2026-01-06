@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_NAME = "product-service"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                bat 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                bat '''
+                docker build -t product-service:latest .
+                '''
+            }
+        }
+
+        stage('Deploy (optional)') {
+            steps {
+                bat '''
+                cd ../dev-env
+                docker-compose up -d product-service
+                '''
+            }
+        }
+    }
+}
