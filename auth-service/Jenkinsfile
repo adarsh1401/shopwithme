@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_NAME = "auth-service"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                bat '''
+		        cd auth-service
+		        mvn clean package -DskipTests
+		        '''
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                bat '''
+                docker build -t auth-service:latest auth-service
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                bat '''
+                cd dev-env
+        		docker-compose up -d auth-service
+                '''
+            }
+        }
+    }
+}
