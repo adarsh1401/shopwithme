@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_NAME = "api-gateway"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                bat '''
+		        cd api-gateway
+		        mvn clean package -DskipTests
+		        '''
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                bat '''
+                docker build -t api-gateway:latest api-gateway
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                bat '''
+                cd dev-env
+        		docker-compose up -d api-gateway
+                '''
+            }
+        }
+    }
+}
