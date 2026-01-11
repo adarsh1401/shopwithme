@@ -1,4 +1,5 @@
 services:
+
   # -------------------- MONGODB --------------------
   mongodb:
     image: mongo:4.4
@@ -11,6 +12,13 @@ services:
       MONGO_INITDB_DATABASE: product-service
     volumes:
       - ./data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--quiet", "--eval", "db.runCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    restart: unless-stopped
 
   # -------------------- PRODUCT SERVICE --------------------
   product-service:
@@ -19,7 +27,9 @@ services:
     ports:
       - "8083:8083"
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
 
   # -------------------- MYSQL FOR ORDER SERVICE --------------------
   mysql-order:
@@ -32,6 +42,13 @@ services:
     volumes:
       - ./mysql-order:/var/lib/mysql
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    restart: unless-stopped
 
   # -------------------- ORDER SERVICE --------------------
   order-service:
@@ -40,12 +57,14 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - mysql-order
+      mysql-order:
+        condition: service_healthy
+    restart: unless-stopped
 
-  # -------------------- MYSQL FOR INVENTORY --------------------
-  mysql:
+  # -------------------- MYSQL FOR INVENTORY SERVICE --------------------
+  mysql-inventory:
     image: mysql:8.3.0
-    container_name: mysql
+    container_name: mysql-inventory
     ports:
       - "3307:3306"
     environment:
@@ -53,6 +72,13 @@ services:
     volumes:
       - ./mysql:/var/lib/mysql
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    restart: unless-stopped
 
   # -------------------- INVENTORY SERVICE --------------------
   inventory-service:
@@ -61,7 +87,9 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      - mysql
+      mysql-inventory:
+        condition: service_healthy
+    restart: unless-stopped
 
   # -------------------- MYSQL FOR AUTH SERVICE --------------------
   mysql-auth:
@@ -74,6 +102,13 @@ services:
       MYSQL_DATABASE: auth_service
     volumes:
       - ./mysql-auth:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    restart: unless-stopped
 
   # -------------------- AUTH SERVICE --------------------
   auth-service:
@@ -82,7 +117,9 @@ services:
     ports:
       - "9001:9001"
     depends_on:
-      - mysql-auth
+      mysql-auth:
+        condition: service_healthy
+    restart: unless-stopped
 
   # -------------------- API GATEWAY --------------------
   api-gateway:
@@ -91,7 +128,23 @@ services:
     ports:
       - "9000:9000"
     depends_on:
-      - product-service
-      - order-service
-      - inventory-service
-      - auth-service
+      product-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      auth-service:
+        condition: service_started
+    restart: unless-stopped
+
+  # -------------------- FRONTEND (SHOPWITHME) --------------------
+  shopwithme:
+    build: ../shopwithme
+    container_name: shopwithme
+    ports:
+      - "8003:8003"
+    depends_on:
+      api-gateway:
+        condition: service_started
+    restart: unless-stopped
